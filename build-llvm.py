@@ -13,6 +13,11 @@ import time
 import utils
 
 
+# This is a good known revision of LLVM for building the kernel
+# To bump this, run 'PATH_OVERRIDE=<path_to_updated_toolchain>/bin kernel/build.sh --allyesconfig'
+GOOD_REVISION = 'ee5dc7e7ad8b8ad6b28b374e151aadb97bd8031c'
+
+
 class Directories():
     def __init__(self, build_folder, install_folder, root_folder):
         self.build_folder = build_folder
@@ -186,6 +191,15 @@ def parse_parameters(root_folder):
                         Build the final compiler with ThinLTO, which can improve compile time performance.
 
                         See https://clang.llvm.org/docs/ThinLTO.html for more information.
+
+                        """),
+                        action="store_true")
+    parser.add_argument("--use-good-revision",
+                        help=textwrap.dedent("""\
+                        By default, the script updates LLVM to the latest tip of tree revision, which may at times be
+                        broken or not work right. With this option, it will checkout a known good revision of LLVM
+                        that builds and works properly. If you use this option often, please remember to update the
+                        script as the known good revision will change.
 
                         """),
                         action="store_true")
@@ -784,7 +798,11 @@ def main():
 
     env_vars = EnvVars(*check_cc_ld_variables(root_folder))
     check_dependencies()
-    fetch_llvm_binutils(root_folder, not args.no_pull, args.branch)
+    if args.use_good_revision:
+        ref = GOOD_REVISION
+    else:
+        ref = args.branch
+    fetch_llvm_binutils(root_folder, not args.no_pull, ref)
     cleanup(build_folder, args.incremental)
     dirs = Directories(build_folder, install_folder, root_folder)
     do_multistage_build(args, dirs, env_vars)
