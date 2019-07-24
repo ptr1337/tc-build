@@ -2,9 +2,18 @@
 # LLVM benchmarking script
 # Assumes that build-binutils.py has been run with the default settings beforehand
 
+TC_BLD=${1:?}
+TC_FOLDER=$(mktemp -d)
+LOG=${TC_BLD}/build-$(date +%Y%m%d-%H%M).log
+
+echo
+echo "Build log will be available at: ${LOG}"
+echo
+sleep 5
+
 function timer() {(
     START=$(date +%s)
-    "${@}" &>/dev/null || exit ${?}
+    "${@}" || exit ${?}
     END=$(date +%s)
 
     TOTAL_SECONDS=$((END - START))
@@ -14,11 +23,8 @@ function timer() {(
         MINS=$((MINS % 60))
         STRING="${HOURS}h "
     fi
-    echo "${STRING}${MINS}m $((TOTAL_SECONDS % 60))s"
+    echo "${STRING}${MINS}m $((TOTAL_SECONDS % 60))s" >> "${LOG}"
 ) || exit ${?}; }
-
-TC_BLD=${1:?}
-TC_FOLDER=$(mktemp -d)
 
 for PAIR in llvm-base:Base llvm-thinlto:ThinLTO llvm-lto:LTO llvm-pgo:PGO llvm-pgo-thinlto:PGO+ThinLTO llvm-pgo-lto:PGO+LTO; do
     INSTALL_FOLDER=${TC_FOLDER}/${PAIR%:*}
@@ -34,14 +40,14 @@ for PAIR in llvm-base:Base llvm-thinlto:ThinLTO llvm-lto:LTO llvm-pgo:PGO llvm-p
         "PGO+LTO") BLD_LLVM_PY=( "${BLD_LLVM_PY[@]}" --pgo --lto=full ) ;;
     esac
 
-    echo -e "${BUILD_TYPE} LLVM build: \c"
+    echo -e "${BUILD_TYPE} LLVM build: \c" >> "${LOG}"
     export PATH_OVERRIDE=${TC_BLD}/install/bin
     timer "${BLD_LLVM_PY[@]}"
 
     for NUM in $(seq 1 2); do
-        echo -e "${BUILD_TYPE} kernel build #${NUM}: \c"
+        echo -e "${BUILD_TYPE} kernel build #${NUM}: \c" >> "${LOG}"
         PATH_OVERRIDE=${INSTALL_FOLDER}/bin:${PATH_OVERRIDE} timer "${TC_BLD}"/kernel/build.sh --allyesconfig
     done
 
-    echo
+    echo >> "${LOG}"
 done
