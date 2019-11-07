@@ -63,6 +63,17 @@ def parse_parameters(root_folder):
                         type=str,
                         default=os.path.join(root_folder.as_posix(), "build",
                                              "binutils"))
+    parser.add_argument("--cflags",
+                        metavar='CFLAGS',
+                        help=textwrap.dedent("""\
+                        Add the specified flags to CFLAGS and CXXFLAGS.
+
+                        NOTE: If supplying only one flag, you need to use an equals sign between the flag and this one.
+
+                        Example: --cflags=\"-mtune=native\"
+
+                        """),
+                        type=str)
     parser.add_argument("-I",
                         "--install-folder",
                         help="""
@@ -85,14 +96,6 @@ def parse_parameters(root_folder):
                         target prefix if it is not for the host architecture.
                         """,
                         nargs="+")
-    parser.add_argument("-m",
-                        "--march",
-                        metavar="ARCH",
-                        help="""
-                        Add -march=ARCH and -mtune=ARCH to CFLAGS to optimize the toolchain for the target
-                        host processor.
-                        """,
-                        type=str)
     return parser.parse_args()
 
 
@@ -138,8 +141,8 @@ def cleanup(build_folder):
     build_folder.mkdir(parents=True, exist_ok=True)
 
 
-def invoke_configure(build_folder, install_folder, root_folder, target,
-                     host_arch):
+def invoke_configure(build_folder, cflags, install_folder, root_folder,
+                     target):
     """
     Invokes the configure script to generate a Makefile
     :param build_folder: Build directory
@@ -153,11 +156,8 @@ def invoke_configure(build_folder, install_folder, root_folder, target,
         '--prefix=%s' % install_folder.as_posix(),
         '--enable-deterministic-archives', '--enable-plugins', '--quiet'
     ]
-    if host_arch:
-        configure += [
-            'CFLAGS=-O2 -march=%s -mtune=%s' % (host_arch, host_arch),
-            'CXXFLAGS=-O2 -march=%s -mtune=%s' % (host_arch, host_arch)
-        ]
+    if cflags:
+        configure += ['CFLAGS=-O2 %s' % (cflags), 'CXXFLAGS=-O2 %s' % (cflags)]
     else:
         configure += ['CFLAGS=-O2', 'CXXFLAGS=-O2']
 
@@ -239,7 +239,7 @@ def invoke_make(build_folder, install_folder, target):
         gitignore.write("*")
 
 
-def build_targets(build, install_folder, root_folder, targets, host_arch):
+def build_targets(build, cflags, install_folder, root_folder, targets):
     """
     Builds binutils for all specified targets
     :param build: Build directory
@@ -252,8 +252,8 @@ def build_targets(build, install_folder, root_folder, targets, host_arch):
     for target in targets:
         build_folder = build.joinpath(target)
         cleanup(build_folder)
-        invoke_configure(build_folder, install_folder, root_folder, target,
-                         host_arch)
+        invoke_configure(build_folder, cflags, install_folder, root_folder,
+                         target)
         invoke_make(build_folder, install_folder, target)
 
 
@@ -276,8 +276,8 @@ def main():
 
     utils.download_binutils(root_folder)
 
-    build_targets(build_folder, install_folder, root_folder,
-                  create_targets(targets), args.march)
+    build_targets(build_folder, args.cflags, install_folder, root_folder,
+                  create_targets(targets))
 
 
 if __name__ == '__main__':
