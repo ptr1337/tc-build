@@ -1,0 +1,5 @@
+/.cargo
+/.rustup
+/gcc
+/hyperfine
+/tmp*
