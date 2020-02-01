@@ -11,7 +11,7 @@ BENCHMARK_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 . "${BENCHMARK_DIR}"/common/hyperfine.sh
 
 # Build the latest stable GCC
-GCC_VER=9.2.0
+GCC_VER=10.0.0
 GCC_DIR=${BENCHMARK_DIR}/gcc
 GCC_TC_DIR=${GCC_DIR}/${GCC_VER}/bin
 (
@@ -26,8 +26,9 @@ GCC_TC_DIR=${GCC_DIR}/${GCC_VER}/bin
         cd "${GCC_BLD_DIR}"
     fi
 
-    GCC_SOURCE=gcc-${GCC_VER}
-    [[ -d ${GCC_SOURCE} ]] || curl -LSs https://mirrors.kernel.org/gnu/gcc/${GCC_SOURCE}/${GCC_SOURCE}.tar.xz | tar -xJf -
+    GCC_SOURCE=gcc-git
+    [[ -d ${GCC_SOURCE} ]] || git clone git://gcc.gnu.org/git/gcc.git gcc-git
+    ( cd gcc-git && git checkout 2d33dcfe9f0494c9b56a8d704c3d27c5a4329ebc )
 
     BINUTILS_SOURCE=binutils-2.33.1
     [[ -d ${BINUTILS_SOURCE} ]] || curl -LSs https://mirrors.kernel.org/gnu/binutils/${BINUTILS_SOURCE}.tar.xz | tar -xJf -
@@ -61,6 +62,7 @@ rm -rf "${WORK_DIR}"
 "${TC_BLD_DIR}"/build-binutils.py
 
 # Download LLVM source
+LLVM_COMMIT=f85d63a558364dcf57efe7b37b3e99b7fd91fd5c
 . "${BENCHMARK_DIR}"/common/llvm.sh
 
 # Benchmark the different LLVM build options
@@ -85,6 +87,7 @@ LLVM_PGO_LTO=${WORK_DIR}/llvm-pgo-lto
 
 # Download kernel source
 . "${BENCHMARK_DIR}"/common/kernel-src.sh
+patch -d "${KERNEL_DIR}" -p1 < "${BENCHMARK_DIR}"/kernel-patches/x86-gcc-10.patch
 
 # Kernel build commands
 MAKE="make -C ${KERNEL_DIR} -j$(nproc) O=out"

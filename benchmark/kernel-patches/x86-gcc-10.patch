@@ -1,0 +1,16 @@
+diff --git a/arch/x86/boot/compressed/pgtable_64.c b/arch/x86/boot/compressed/pgtable_64.c
+index c8862696a47b..f0879bc58ca2 100644
+--- a/arch/x86/boot/compressed/pgtable_64.c
++++ b/arch/x86/boot/compressed/pgtable_64.c
+@@ -12,7 +12,11 @@
+  * It is not referenced from the code, but GCC < 5 with -fPIE would fail
+  * due to an undefined symbol. Define it to make these ancient GCCs work.
+  */
++#ifdef CONFIG_CC_IS_GCC
++#if CONFIG_GCC_VERSION < 50000
+ unsigned long __force_order;
++#endif
++#endif
+ 
+ #define BIOS_START_MIN		0x20000U	/* 128K, less than this is insane */
+ #define BIOS_START_MAX		0x9f000U	/* 640K, absolute maximum */
