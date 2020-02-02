@@ -11,9 +11,13 @@ BENCHMARK_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 # Download and build hyperfine
 . "${BENCHMARK_DIR}"/common/hyperfine.sh
 
+# Download LLVM source
+LLVM_COMMIT=f85d63a558364dcf57efe7b37b3e99b7fd91fd5c
+. "${BENCHMARK_DIR}"/common/llvm.sh
+
 # Build LLVM and binutils
 rm -rf "${TC_BLD_DIR}"/install
-"${TC_BLD_DIR}"/build-llvm.py --branch llvmorg-9.0.0
+"${TC_BLD_DIR}"/build-llvm.py --no-update
 "${TC_BLD_DIR}"/build-binutils.py
 
 # Download kernel source
