@@ -14,6 +14,9 @@ BENCHMARK_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 # Download LLVM source
 LLVM_COMMIT=f85d63a558364dcf57efe7b37b3e99b7fd91fd5c
 . "${BENCHMARK_DIR}"/common/llvm.sh
+( cd "${LLVM_DIR}" && \
+  git fp -1 --stdout 870094decfc9fe80c8e0a6405421b7d09b97b02b | git ap && \
+  git fp -1 --stdout 01ad4c838466bd5db180608050ed8ccb3b62d136 | git ap )
 
 # Build LLVM and binutils
 rm -rf "${TC_BLD_DIR}"/install
