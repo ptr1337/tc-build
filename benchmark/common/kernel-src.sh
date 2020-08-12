@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This hashbang is purely for shellcheck auditing, this script needs to be sourced to work
 
-KERNEL_VER=5.5
+KERNEL_VER=5.8.1
 KERNEL_DIR=${WORK_DIR:?}/linux-${KERNEL_VER}
 KERNEL_PATCH=${TC_BLD_DIR:?}/kernel/${KERNEL_DIR##*/}-allyesconfig.patch
 (
