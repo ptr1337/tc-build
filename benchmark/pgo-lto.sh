@@ -36,7 +36,7 @@ GCC_TC_DIR=${GCC_DIR}/${GCC_VER}/bin
     [[ -f timert ]] || make -j"$(nproc)"
 
     # Create config
-    cat <<EOF > config
+    cat <<EOF >config
 BINUTILS_SRC=${PWD}/${BINUTILS_SOURCE}
 CHECKING=release
 ECHO=/bin/echo
@@ -73,16 +73,17 @@ LLVM_LTO=${WORK_DIR}/llvm-lto
 LLVM_PGO=${WORK_DIR}/llvm-pgo
 LLVM_PGO_THINLTO=${WORK_DIR}/llvm-pgo-thinlto
 LLVM_PGO_LTO=${WORK_DIR}/llvm-pgo-lto
-"${HYPERFINE}" --export-markdown "${WORK_DIR}"/llvm-build-results.md \
-               --runs 7 \
-               --warmup 1 \
-               "${TC_BLD} ${LLVM_STAGE_ONE} --build-stage1-only --install-stage1-only" \
-               "${TC_BLD} ${LLVM_DEFAULT}" \
-               "${TC_BLD} ${LLVM_THINLTO} --lto=thin" \
-               "${TC_BLD} ${LLVM_LTO} --lto=full" \
-               "${TC_BLD} ${LLVM_PGO} --pgo" \
-               "${TC_BLD} ${LLVM_PGO_THINLTO} --lto=thin --pgo" \
-               "${TC_BLD} ${LLVM_PGO_LTO} --lto=full --pgo" || exit ${?}
+"${HYPERFINE}" \
+    --export-markdown "${WORK_DIR}"/llvm-build-results.md \
+    --runs 7 \
+    --warmup 1 \
+    "${TC_BLD} ${LLVM_STAGE_ONE} --build-stage1-only --install-stage1-only" \
+    "${TC_BLD} ${LLVM_DEFAULT}" \
+    "${TC_BLD} ${LLVM_THINLTO} --lto=thin" \
+    "${TC_BLD} ${LLVM_LTO} --lto=full" \
+    "${TC_BLD} ${LLVM_PGO} --pgo" \
+    "${TC_BLD} ${LLVM_PGO_THINLTO} --lto=thin --pgo" \
+    "${TC_BLD} ${LLVM_PGO_LTO} --lto=full --pgo" || exit ${?}
 
 # Download kernel source
 . "${BENCHMARK_DIR}"/common/kernel-src.sh
@@ -98,31 +99,47 @@ LPGOTLTO_MAKE="${MAKE} CC=${LLVM_PGO_THINLTO}/bin/clang LD=${LLVM_PGO_THINLTO}/b
 LPGOFLTO_MAKE="${MAKE} CC=${LLVM_PGO_LTO}/bin/clang LD=${LLVM_PGO_LTO}/bin/ld.lld"
 
 # hyperfine wrapper
-function hyperfine_wrapper() {(
-    while (( ${#} )); do
+function hyperfine_wrapper() { (
+    while ((${#})); do
         case ${1} in
-            "-a"|"--arch") shift; ARCH=${1} ;;
-            "-c"|"--cross-compile") shift; CROSS_COMPILE=${1} ;;
-            "-d"|"--defconfig") shift; DEFCONFIG=${1} ;;
-            "-g"|"--gcc") shift; GCC=${GCC_TC_DIR}/${1}- ;;
-            "-r"|"--results-suffix") shift; RESULTS_FILE=${WORK_DIR}/results-${1}.md ;;
+            "-a" | "--arch")
+                shift
+                ARCH=${1}
+                ;;
+            "-c" | "--cross-compile")
+                shift
+                CROSS_COMPILE=${1}
+                ;;
+            "-d" | "--defconfig")
+                shift
+                DEFCONFIG=${1}
+                ;;
+            "-g" | "--gcc")
+                shift
+                GCC=${GCC_TC_DIR}/${1}-
+                ;;
+            "-r" | "--results-suffix")
+                shift
+                RESULTS_FILE=${WORK_DIR}/results-${1}.md
+                ;;
         esac
         shift
     done
     [[ -z ${GCC:-} && -n ${CROSS_COMPILE:-} ]] && GCC=${GCC_TC_DIR}/${CROSS_COMPILE}-
     ARCH_OPTIONS="${ARCH:+ARCH=${ARCH} }${CROSS_COMPILE:+CROSS_COMPILE=${BINUTILS_DIR}/${CROSS_COMPILE}- }${DEFCONFIG:=defconfig} all"
-    "${HYPERFINE}" --export-markdown "${RESULTS_FILE}" \
-                   --prepare "rm -rf ${KERNEL_DIR}/out" \
-                   --runs "$(nproc --all)" \
-                   --warmup 1 \
-                   "${MAKE} ${ARCH:+ARCH=${ARCH} }${GCC:+CROSS_COMPILE=${GCC} }${DEFCONFIG:=defconfig} all" \
-                   "${LSO_MAKE} ${ARCH_OPTIONS}" \
-                   "${LD_MAKE} ${ARCH_OPTIONS}" \
-                   "${LTLTO_MAKE} ${ARCH_OPTIONS}" \
-                   "${LFLTO_MAKE} ${ARCH_OPTIONS}" \
-                   "${LPGO_MAKE} ${ARCH_OPTIONS}" \
-                   "${LPGOTLTO_MAKE} ${ARCH_OPTIONS}" \
-                   "${LPGOFLTO_MAKE} ${ARCH_OPTIONS}"
+    "${HYPERFINE}" \
+        --export-markdown "${RESULTS_FILE}" \
+        --prepare "rm -rf ${KERNEL_DIR}/out" \
+        --runs "$(nproc --all)" \
+        --warmup 1 \
+        "${MAKE} ${ARCH:+ARCH=${ARCH} }${GCC:+CROSS_COMPILE=${GCC} }${DEFCONFIG:=defconfig} all" \
+        "${LSO_MAKE} ${ARCH_OPTIONS}" \
+        "${LD_MAKE} ${ARCH_OPTIONS}" \
+        "${LTLTO_MAKE} ${ARCH_OPTIONS}" \
+        "${LFLTO_MAKE} ${ARCH_OPTIONS}" \
+        "${LPGO_MAKE} ${ARCH_OPTIONS}" \
+        "${LPGOTLTO_MAKE} ${ARCH_OPTIONS}" \
+        "${LPGOFLTO_MAKE} ${ARCH_OPTIONS}"
 ) || exit ${?}; }
 
 # Benchmark GCC 9.2.0 vs. Clang for ARM, AArch64, PowerPC 32-bit, PowerPC 64-bit little endian, and x86_64
