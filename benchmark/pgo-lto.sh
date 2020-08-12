@@ -22,7 +22,7 @@ GCC_TC_DIR=${GCC_DIR}/${GCC_VER}/bin
         cd "${GCC_BLD_DIR}"
         git pull
     else
-        git clone git://git.infradead.org/users/segher/buildall.git "${GCC_BLD_DIR}"
+        git clone https://github.com/nathanchance/buildall "${GCC_BLD_DIR}"
         cd "${GCC_BLD_DIR}"
     fi
 
