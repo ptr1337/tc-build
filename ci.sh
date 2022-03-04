@@ -52,8 +52,7 @@ function do_deps() {
 }
 
 function do_kernel() {
-    cd "${BASE}"/kernel
-    ./build.sh -t X86
+    "${BASE}"/kernel/build.sh -t X86
 }
 
 function do_llvm() {
@@ -61,7 +60,7 @@ function do_llvm() {
     [[ -n ${GITHUB_ACTIONS:-} ]] && EXTRA_ARGS+=(--no-ccache)
     "${BASE}"/build-llvm.py \
         --assertions \
-        --branch "release/13.x" \
+        --branch "release/14.x" \
         --build-stage1-only \
         --check-targets clang lld llvm \
         --install-stage1-only \
