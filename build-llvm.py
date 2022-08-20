@@ -1057,7 +1057,7 @@ def stage_specific_cmake_defines(args, dirs, stage):
                 defines['LLVM_ENABLE_LTO'] = args.lto.capitalize()
             # BOLT needs relocations for instrumentation
             if args.bolt:
-                defines['CMAKE_EXE_LINKER_FLAGS'] = '-Wl,--emit-relocs'
+                defines['CMAKE_EXE_LINKER_FLAGS'] = '-Wl,-znow -Wl,--emit-relocs'
 
         # If the user did not specify CMAKE_C_FLAGS or CMAKE_CXX_FLAGS, add them as empty
         # to paste stage 2 to ensure there are no environment issues (since CFLAGS and CXXFLAGS
@@ -1516,7 +1516,7 @@ def do_bolt(args, dirs):
     clang_opt_cmd = [
         llvm_bolt, "--data={}".format(bolt_profile), "--reorder-blocks=cache+",
         "--reorder-functions=hfsort+", "--split-functions=3",
-        "--split-all-cold", "--dyno-stats", "--icf=1", "--use-gnu-stack", "-o",
+        "--split-all-cold", "--dyno-stats", "--icf=1", "--plt=all", "--use-gnu-stack", "-o",
         clang_bolt, clang
     ]
     show_command(args, clang_opt_cmd)
